@@ -120,6 +120,7 @@
         async function updateQueue() {
             try {
                 const loadingText = document.getElementById('lastUpdated');
+                const queueTotal = document.getElementById('queueTotal');
                 loadingText.textContent = 'Atualizando...';
                 
                 console.log('Fetching queue count...');
@@ -134,16 +135,18 @@
                 const data = await response.json();
                 console.log('Received data:', data);
 
-                // Update the total count
-                const queueTotal = document.getElementById('queueTotal');
-                queueTotal.textContent = data.count;
+                // Update the total count, ensuring 0 is displayed when count is 0 or undefined
+                queueTotal.textContent = data.count || '0';
 
                 const now = new Date();
-                loadingText.textContent = 'Última atualização: ' + now.toLocaleTimeString();
+                loadingText.textContent = data.count ? 
+                    'Última atualização: ' + now.toLocaleTimeString() :
+                    'Não há pessoas na fila';
             } catch (error) {
                 console.error('Error updating queue:', error);
                 document.getElementById('lastUpdated').textContent = 
                     'Erro ao atualizar fila: ' + error.message;
+                document.getElementById('queueTotal').textContent = '0';
             }
         }
 
