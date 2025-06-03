@@ -144,12 +144,16 @@
         
         async function updateQueue() {
             try {
+                const loadingText = document.getElementById('lastUpdated');
+                loadingText.textContent = 'Atualizando...';
+                
                 console.log('Fetching queue count...');
                 const response = await fetch(`${SERVER_URL}/api/queue-count`);
                 console.log('Response:', response);
 
                 if (!response.ok) {
-                    throw new Error(`Failed to fetch queue count: ${response.status} ${response.statusText}`);
+                    const errorData = await response.json();
+                    throw new Error(errorData.message || `Failed to fetch queue count: ${response.status} ${response.statusText}`);
                 }
 
                 const data = await response.json();
@@ -168,12 +172,11 @@
                 }
 
                 const now = new Date();
-                document.getElementById('lastUpdated').textContent = 
-                    'Última atualização: ' + now.toLocaleTimeString();
+                loadingText.textContent = 'Última atualização: ' + now.toLocaleTimeString();
             } catch (error) {
                 console.error('Error updating queue:', error);
                 document.getElementById('lastUpdated').textContent = 
-                    'Erro ao atualizar fila. Tentando novamente...';
+                    'Erro ao atualizar fila: ' + error.message;
             }
         }
 
