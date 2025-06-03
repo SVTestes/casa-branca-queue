@@ -6,7 +6,9 @@ const path = require('path');
 const app = express();
 app.use(cors());
 
-// Serve static files from current directory
+// Serve static files from current directory with explicit paths
+app.use('/Logo', express.static(path.join(__dirname, 'Logo')));
+app.use('/fonts', express.static(path.join(__dirname, 'fonts')));
 app.use(express.static(path.join(__dirname)));
 
 // Serve queue.html at the root route
@@ -108,4 +110,4 @@ app.get('/api/queue-count', async (req, res) => {
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`Server running on port ${PORT}`);
-});
+}); 
