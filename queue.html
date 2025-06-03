@@ -38,7 +38,7 @@
         h1 {
             color: #632424;
             margin: 20px 0;
-            font-size: 2.5em;
+            font-size: 1.8em;
             font-weight: 600;
             letter-spacing: -0.5px;
         }
@@ -54,13 +54,13 @@
         .queue-total {
             background-color: #632424;
             color: white;
-            width: 200px;
-            height: 200px;
+            width: 150px;
+            height: 150px;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 64px;
+            font-size: 48px;
             font-weight: 600;
             box-shadow: 0 4px 15px rgba(99, 36, 36, 0.2);
             margin: 0 auto;
@@ -75,13 +75,13 @@
             background-color: #632424;
             color: white;
             border: none;
-            padding: 12px 24px;
+            padding: 8px 16px;
             border-radius: 8px;
             cursor: pointer;
             font-family: 'Inter', sans-serif;
-            font-size: 16px;
+            font-size: 14px;
             font-weight: 500;
-            margin-top: 30px;
+            margin-top: 20px;
             transition: background-color 0.3s, transform 0.2s;
         }
 
@@ -93,13 +93,6 @@
         .refresh-button:active {
             transform: translateY(0);
         }
-
-        .last-updated {
-            color: #666;
-            font-size: 14px;
-            margin-top: 15px;
-            font-weight: 400;
-        }
     </style>
 </head>
 <body>
@@ -110,7 +103,6 @@
     <div class="queue-container">
         <div class="queue-total" id="queueTotal">0</div>
         <button class="refresh-button" onclick="updateQueue()">Atualizar</button>
-        <div class="last-updated" id="lastUpdated"></div>
     </div>
 
     <script>
@@ -119,10 +111,6 @@
         
         async function updateQueue() {
             try {
-                const loadingText = document.getElementById('lastUpdated');
-                const queueTotal = document.getElementById('queueTotal');
-                loadingText.textContent = 'Atualizando...';
-                
                 console.log('Fetching queue count...');
                 const response = await fetch(`${SERVER_URL}/api/queue-count`);
                 console.log('Response:', response);
@@ -136,16 +124,11 @@
                 console.log('Received data:', data);
 
                 // Update the total count, ensuring 0 is displayed when count is 0 or undefined
+                const queueTotal = document.getElementById('queueTotal');
                 queueTotal.textContent = data.count || '0';
 
-                const now = new Date();
-                loadingText.textContent = data.count ? 
-                    'Última atualização: ' + now.toLocaleTimeString() :
-                    'Não há pessoas na fila';
             } catch (error) {
                 console.error('Error updating queue:', error);
-                document.getElementById('lastUpdated').textContent = 
-                    'Erro ao atualizar fila: ' + error.message;
                 document.getElementById('queueTotal').textContent = '0';
             }
         }
