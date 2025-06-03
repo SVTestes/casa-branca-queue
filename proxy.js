@@ -1,12 +1,18 @@
 const express = require('express');
 const cors = require('cors');
 const puppeteer = require('puppeteer');
+const path = require('path');
 
 const app = express();
 app.use(cors());
 
 // Serve static files from current directory
-app.use(express.static('./'));
+app.use(express.static(path.join(__dirname)));
+
+// Serve queue.html at the root route
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'queue.html'));
+});
 
 // Cache the queue count to avoid too frequent scraping
 let cachedCount = 0;
@@ -20,42 +26,46 @@ async function getQueueCount() {
         return cachedCount;
     }
 
+    let browser = null;
     try {
         console.log('Launching browser...');
-        const browser = await puppeteer.launch({
+        browser = await puppeteer.launch({
             headless: 'new',
             args: [
                 '--no-sandbox',
                 '--disable-setuid-sandbox',
                 '--disable-dev-shm-usage',
-                '--single-process'
+                '--disable-gpu',
+                '--no-first-run',
+                '--no-zygote',
+                '--deterministic-fetch',
+                '--disable-features=IsolateOrigins',
+                '--disable-site-isolation-trials'
             ]
         });
+        
         const page = await browser.newPage();
+        await page.setDefaultNavigationTimeout(60000);
         
         console.log('Navigating to FastGet...');
-        // Navigate to FastGet queue page
         await page.goto('https://app.fastget.com.br/#/panel/d55420f6-b1b2-11ef-9f40-029e72b0772d/QUEUE', {
             waitUntil: 'networkidle0',
-            timeout: 30000
+            timeout: 60000
         });
 
         console.log('Waiting for queue items...');
-        // Wait for the queue items to load and be visible
         await page.waitForSelector('div.item.font-bold', { 
             visible: true,
-            timeout: 10000 
+            timeout: 30000 
         });
 
         console.log('Counting queue items...');
-        // Count the number of people in queue
         const count = await page.evaluate(() => {
             const items = document.querySelectorAll('div.item.font-bold');
             console.log('Found items:', items.length);
             return items.length;
         });
 
-        await browser.close();
         console.log('Got queue count:', count);
 
         // Update cache
@@ -67,8 +77,21 @@ async function getQueueCount() {
         console.error('Error fetching queue count:', error);
         // Return last known count if there's an error
         return cachedCount;
+    } finally {
+        if (browser) {
+            try {
+                await browser.close();
+            } catch (error) {
+                console.error('Error closing browser:', error);
+            }
+        }
     }
 }
+
+// Health check endpoint
+app.get('/health', (req, res) => {
+    res.status(200).json({ status: 'ok' });
+});
 
 app.get('/api/queue-count', async (req, res) => {
     try {
@@ -78,11 +101,11 @@ app.get('/api/queue-count', async (req, res) => {
         res.json({ count });
     } catch (error) {
         console.error('API error:', error);
-        res.status(500).json({ error: 'Failed to get queue count' });
+        res.status(500).json({ error: 'Failed to get queue count', message: error.message });
     }
 });
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`Server running on port ${PORT}`);
-}); 
+});
